@@ -11,3 +11,215 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id        String  @id @default(cuid())
+  email     String  @unique
+  username  String  @unique
+  fullName  String
+  title     String
+  avatarUrl String?
+
+  theme     Theme     @default(LIGHT)
+  colorMode ColorMode @default(BLUE)
+
+  reportedTasks  Task[]       @relation("ReportedTasks")
+  comments       Comment[]    @relation("UserComments")
+  taskUpdates    TaskUpdate[] @relation("TaskUpdates")
+  teamMembership TeamMember[]
+  taskMembership TaskMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  status      ProjectStatus @default(ACTIVE)
+
+  priority TaskPriority @default(NONE)
+  dueDate  DateTime?
+
+  task Task[] @relation("ProjectTasks")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(NONE)
+  dueDate     DateTime?
+
+  projectId String
+  project   Project @relation("ProjectTasks", fields: [projectId], references: [id], onDelete: Cascade)
+
+  reporterId String
+  reporter   User   @relation("ReportedTasks", fields: [reporterId], references: [id])
+
+  parentTaskId String?
+  parentTask   Task?   @relation("TaskHierrachy", fields: [parentTaskId], references: [id])
+  subtasks     Task[]  @relation("TaskHierrachy")
+
+  comment  Comment[]    @relation("TaskComments")
+  resource Resource[]   @relation("TaskResources")
+  members  TaskMember[]
+  labels   TaskLabel[]
+  updates  TaskUpdate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([reporterId])
+  @@index([parentTaskId])
+  @@index([status])
+  @@index([priority])
+}
+
+model Comment {
+  id      String @id @default(cuid())
+  content String
+
+  taskId String
+  task   Task   @relation("TaskComments", fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("UserComments", fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Label {
+  id     String      @id @default(cuid())
+  title  String
+  taskid String
+  tasks  TaskLabel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskLabel {
+  taskId  String
+  labelId String
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+}
+
+model Team {
+  id       String   @id @default(cuid())
+  name     String
+  memberid String[]
+
+  members TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TeamMember {
+  teamId String
+  userId String
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@id([teamId, userId])
+}
+
+model TaskMember {
+  taskId String
+  userId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([taskId, userId])
+}
+
+model Resource {
+  id   String @id @default(cuid())
+  name String
+  url  String
+
+  taskId String
+  task   Task   @relation("TaskResources", fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaskUpdate {
+  id      String         @id @default(cuid())
+  taskId  String
+  userId  String
+  type    TaskUpdateType
+  message String
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation("TaskUpdates", fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+enum TaskPriority {
+  NONE
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskUpdateType {
+  CREATED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  LABEL_ADDED
+  LABEL_REMOVED
+  COMMENT_ADDED
+  DESCRIPTION_CHANGED
+  TITLE_CHANGED
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum ColorMode {
+  AMBER
+  BLUE
+  PINK
+  ROSE
+  EMERALD
+  BLACK
+}
