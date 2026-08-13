@@ -4,8 +4,9 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -36,13 +37,13 @@ model User {
 model Project {
   id          String        @id @default(cuid())
   title       String
-  description String
+  description String?
   status      ProjectStatus @default(ACTIVE)
 
   priority TaskPriority @default(NONE)
   dueDate  DateTime?
 
-  task Task[] @relation("ProjectTasks")
+  tasks Task[] @relation("ProjectTasks")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -66,11 +67,11 @@ model Task {
   parentTask   Task?   @relation("TaskHierrachy", fields: [parentTaskId], references: [id])
   subtasks     Task[]  @relation("TaskHierrachy")
 
-  comment  Comment[]    @relation("TaskComments")
-  resource Resource[]   @relation("TaskResources")
-  members  TaskMember[]
-  labels   TaskLabel[]
-  updates  TaskUpdate[]
+  comments  Comment[]    @relation("TaskComments")
+  resources Resource[]   @relation("TaskResources")
+  members   TaskMember[]
+  labels    TaskLabel[]
+  updates   TaskUpdate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
