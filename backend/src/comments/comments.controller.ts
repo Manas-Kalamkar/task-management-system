@@ -11,10 +11,13 @@ import {
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller()
 export class CommentsController {
-  constructor(private readonly commentsService: CommentsService) {}
+  constructor(private readonly commentsService: CommentsService) { }
 
   @Post('tasks/:taskId/comments')
   create(
