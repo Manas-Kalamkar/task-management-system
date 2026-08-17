@@ -1,5 +1,5 @@
 import {
-  ConflictException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,42 +10,40 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: createUserDto.email },
-          { username: createUserDto.username },
-        ],
-      },
-    });
-
-    if (existingUser) {
-      throw new ConflictException(
-        'Email or username already exists',
-      );
-    }
-
+  try {
     return this.prisma.user.create({
       data: {
         email: createUserDto.email,
         username: createUserDto.username,
         fullName: createUserDto.fullName,
+        password: createUserDto.password,
         title: createUserDto.title ?? '',
         avatarUrl: createUserDto.avatarUrl ?? '',
       },
     });
+  } catch (e) {
+    throw new BadRequestException(
+      'Users must be created through /auth/register',
+    );
   }
-
+}
   async findAll() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({
+      omit: {
+        password: true,
+      },
+    });
   }
 
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      omit: {
+        password: true,
+      },
     });
 
     if (!user) {
@@ -67,6 +65,9 @@ export class UsersService {
         title: updateUserDto.title,
         avatarUrl: updateUserDto.avatarUrl,
       },
+      omit: {
+        password: true,
+      },
     });
   }
 
@@ -75,6 +76,9 @@ export class UsersService {
 
     return this.prisma.user.delete({
       where: { id },
+      omit: {
+        password: true,
+      },
     });
   }
 }
