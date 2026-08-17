@@ -3,14 +3,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateTaskMemberDto } from './dto/create-task-member.dto';
 
 @Injectable()
 export class TaskMembersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async addMember(taskId: string, userId: string) {
-    // Make sure task exists
+  async add(taskId: string, dto: CreateTaskMemberDto) {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
     });
@@ -19,33 +20,31 @@ export class TaskMembersService {
       throw new NotFoundException('Task not found');
     }
 
-    // Make sure user exists
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: dto.userId },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Prevent duplicate assignment
     const existing = await this.prisma.taskMember.findUnique({
       where: {
         taskId_userId: {
           taskId,
-          userId,
+          userId: dto.userId,
         },
       },
     });
 
     if (existing) {
-      throw new ConflictException('User is already assigned to this task');
+      throw new ConflictException('User already assigned to task');
     }
 
     return this.prisma.taskMember.create({
       data: {
         taskId,
-        userId,
+        userId: dto.userId,
       },
       include: {
         user: true,
@@ -53,15 +52,7 @@ export class TaskMembersService {
     });
   }
 
-  async findMembers(taskId: string) {
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
-    });
-
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
+  async findAll(taskId: string) {
     return this.prisma.taskMember.findMany({
       where: { taskId },
       include: {
@@ -70,7 +61,7 @@ export class TaskMembersService {
     });
   }
 
-  async removeMember(taskId: string, userId: string) {
+  async remove(taskId: string, userId: string) {
     const member = await this.prisma.taskMember.findUnique({
       where: {
         taskId_userId: {
