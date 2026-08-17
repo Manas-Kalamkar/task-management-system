@@ -31,10 +31,7 @@ export class CreateTaskDto {
 
   @IsString()
   projectId!: string;
-
-  @IsString()
-  reporterId!: string;
-
+ 
   @IsOptional()
   @IsString()
   parentTaskId?: string;

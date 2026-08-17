@@ -13,16 +13,18 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskQueryDto } from './dto/tast-query-dto';
+import { Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) { }
 
   @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(@Body() dto: CreateTaskDto, @Req() req: any) {
+    return this.tasksService.create(dto, req.user.userId);
   }
-
   @Get()
   findAll(@Query() query: TaskQueryDto) {
     return this.tasksService.findAll(query);
@@ -45,10 +47,18 @@ export class TasksController {
   remove(@Param('id') id: string) {
     return this.tasksService.remove(id);
   }
-  
-  
+
   @Get(':id/subtasks')
-  findSubtasks(@Param('id') id: string) {
-    return this.tasksService.findSubtasks(id);
+  getSubtasks(@Param('id') id: string) {
+    return this.tasksService.getSubtasks(id);
+  }
+
+  @Post(':id/subtasks')
+  createSubtask(
+    @Param('id') id: string,
+    @Body() dto: CreateTaskDto,
+    @Req() req: any
+  ) {
+    return this.tasksService.createSubtask(id, dto,req);
   }
 }

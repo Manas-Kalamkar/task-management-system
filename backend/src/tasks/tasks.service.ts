@@ -8,7 +8,7 @@ import { TaskQueryDto } from './dto/tast-query-dto';
 export class TasksService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(createTaskDto: CreateTaskDto) {
+  async create(createTaskDto: CreateTaskDto, reporterId:string) {
     return this.prisma.task.create({
       data: {
         title: createTaskDto.title,
@@ -32,7 +32,7 @@ export class TasksService {
 
         reporter: {
           connect: {
-            id: createTaskDto.reporterId,
+            id: reporterId,
           },
         },
 
@@ -163,4 +163,50 @@ export class TasksService {
 
     })
   }
+
+  async getSubtasks(id: string) {
+  await this.findOne(id);
+
+  return this.prisma.task.findMany({
+    where: {
+      parentTaskId: id,
+    },
+    include: {
+      reporter: true,
+      project: true,
+    },
+  });
+}
+
+async createSubtask(parentTaskId: string, dto: CreateTaskDto,reporterId:string) {
+  await this.findOne(parentTaskId);
+
+  return this.prisma.task.create({
+    data: {
+      title: dto.title,
+      description: dto.description,
+      status: dto.status,
+      priority: dto.priority,
+      dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+
+      project: {
+        connect: {
+          id: dto.projectId,
+        },
+      },
+
+      reporter: {
+        connect: {
+          id:reporterId
+        },
+      },
+
+      parentTask: {
+        connect: {
+          id: parentTaskId,
+        },
+      },
+    },
+  });
+}
 }
