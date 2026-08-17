@@ -18,6 +18,7 @@ model User {
   email     String  @unique
   username  String  @unique
   fullName  String
+  password  String
   title     String
   avatarUrl String?
 
@@ -98,10 +99,9 @@ model Comment {
 }
 
 model Label {
-  id     String      @id @default(cuid())
-  title  String
-  taskid String
-  tasks  TaskLabel[]
+  id    String      @id @default(cuid())
+  title String
+  tasks TaskLabel[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
